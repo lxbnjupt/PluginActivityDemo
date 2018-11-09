@@ -1,5 +1,8 @@
 package com.lxbnjupt.pluginactivitydemo.utils;
 
+import android.app.Instrumentation;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
@@ -18,6 +21,7 @@ public class HookHelper {
 
     /**
      * Hook IActivityManager
+     *
      * @throws Exception
      */
     public static void hookAMS() throws Exception {
@@ -52,6 +56,7 @@ public class HookHelper {
 
     /**
      * Hook ActivityThread中Handler成员变量mH
+     *
      * @throws Exception
      */
     public static void hookHandler() throws Exception {
@@ -69,5 +74,32 @@ public class HookHelper {
 
         // 将我们自己的HCallback对象赋值给mH的mCallback
         ReflectUtils.setField(Handler.class, "mCallback", mH, new HCallback(mH));
+    }
+
+    /**
+     * Hook Instrumentation
+     *
+     * @param context 上下文环境
+     * @throws Exception
+     */
+    public static void hookInstrumentation(Context context) throws Exception {
+        Log.e(TAG, "hookInstrumentation");
+        Class<?> contextImplClass = Class.forName("android.app.ContextImpl");
+        // 获取ContextImpl中成员变量mMainThread字段
+        Field mMainThreadField = ReflectUtils.getField(contextImplClass, "mMainThread");
+        // 获取ActivityThread主线程对象
+        Object activityThread = mMainThreadField.get(context);
+
+        Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
+        // 获取ActivityThread中成员变量mInstrumentation字段
+        Field mInstrumentationField = ReflectUtils.getField(activityThreadClass, "mInstrumentation");
+        // 获取Instrumentation对象
+        Instrumentation instrumentation = (Instrumentation) mInstrumentationField.get(activityThread);
+        PackageManager packageManager = context.getPackageManager();
+        // 创建Instrumentation代理对象
+        InstrumentationProxy instrumentationProxy = new InstrumentationProxy(instrumentation, packageManager);
+
+        // 用InstrumentationProxy代理对象替换原来的Instrumentation对象
+        ReflectUtils.setField(activityThreadClass, "mInstrumentation", activityThread, instrumentationProxy);
     }
 }

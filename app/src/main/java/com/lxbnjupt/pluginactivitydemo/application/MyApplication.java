@@ -15,8 +15,12 @@ public class MyApplication extends Application {
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         try {
+            // 通过Hook IActivityManager实现Activity插件化
             HookHelper.hookAMS();
             HookHelper.hookHandler();
+
+            // 通过Hook Instrumentation实现Activity插件化
+//            HookHelper.hookInstrumentation(base);
         } catch (Exception e) {
             e.printStackTrace();
         }
