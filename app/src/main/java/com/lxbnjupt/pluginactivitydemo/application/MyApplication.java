@@ -16,11 +16,11 @@ public class MyApplication extends Application {
         super.attachBaseContext(base);
         try {
             // 通过Hook IActivityManager实现Activity插件化
-            HookHelper.hookAMS();
-            HookHelper.hookHandler();
+//            HookHelper.hookAMS();
+//            HookHelper.hookHandler();
 
             // 通过Hook Instrumentation实现Activity插件化
-//            HookHelper.hookInstrumentation(base);
+            HookHelper.hookInstrumentation(base);
         } catch (Exception e) {
             e.printStackTrace();
         }
