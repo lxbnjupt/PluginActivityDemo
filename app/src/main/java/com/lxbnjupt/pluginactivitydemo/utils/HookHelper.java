@@ -64,7 +64,7 @@ public class HookHelper {
         Class<?> activityThreadClazz = Class.forName("android.app.ActivityThread");
         // 获取ActivityThread中成员变量sCurrentActivityThread字段
         Field sCurrentActivityThreadField = ReflectUtils.getField(activityThreadClazz, "sCurrentActivityThread");
-        // 获取ActivityThread主线程对象
+        // 获取ActivityThread主线程对象(应用程序启动后就会在attach方法中赋值)
         Object currentActivityThread = sCurrentActivityThreadField.get(activityThreadClazz);
 
         // 获取ActivityThread中成员变量mH字段
@@ -84,22 +84,20 @@ public class HookHelper {
      */
     public static void hookInstrumentation(Context context) throws Exception {
         Log.e(TAG, "hookInstrumentation");
-        Class<?> contextImplClass = Class.forName("android.app.ContextImpl");
-        // 获取ContextImpl中成员变量mMainThread字段
-        Field mMainThreadField = ReflectUtils.getField(contextImplClass, "mMainThread");
-        // 获取ActivityThread主线程对象
-        Object activityThread = mMainThreadField.get(context);
-
-        Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
+        Class<?> activityThreadClazz = Class.forName("android.app.ActivityThread");
+        // 获取ActivityThread中成员变量sCurrentActivityThread字段
+        Field sCurrentActivityThreadField = ReflectUtils.getField(activityThreadClazz, "sCurrentActivityThread");
         // 获取ActivityThread中成员变量mInstrumentation字段
-        Field mInstrumentationField = ReflectUtils.getField(activityThreadClass, "mInstrumentation");
+        Field mInstrumentationField = ReflectUtils.getField(activityThreadClazz, "mInstrumentation");
+        // 获取ActivityThread主线程对象(应用程序启动后就会在attach方法中赋值)
+        Object currentActivityThread = sCurrentActivityThreadField.get(activityThreadClazz);
         // 获取Instrumentation对象
-        Instrumentation instrumentation = (Instrumentation) mInstrumentationField.get(activityThread);
+        Instrumentation instrumentation = (Instrumentation) mInstrumentationField.get(currentActivityThread);
         PackageManager packageManager = context.getPackageManager();
         // 创建Instrumentation代理对象
         InstrumentationProxy instrumentationProxy = new InstrumentationProxy(instrumentation, packageManager);
 
         // 用InstrumentationProxy代理对象替换原来的Instrumentation对象
-        ReflectUtils.setField(activityThreadClass, "mInstrumentation", activityThread, instrumentationProxy);
+        ReflectUtils.setField(activityThreadClazz, "mInstrumentation", currentActivityThread, instrumentationProxy);
     }
 }
